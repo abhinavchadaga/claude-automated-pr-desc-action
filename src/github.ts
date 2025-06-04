@@ -3,9 +3,6 @@ import * as github from '@actions/github'
 import { context } from '@actions/github'
 import { minimatch } from 'minimatch'
 
-/**
- * Filter diff to remove files matching ignored patterns
- */
 function filterDiff(diff: string, ignoredPatterns: string[]): string {
   if (ignoredPatterns.length === 0) {
     return diff
@@ -20,28 +17,29 @@ function filterDiff(diff: string, ignoredPatterns: string[]): string {
   for (const section of fileSections) {
     const firstLine = section.split('\n')[0]
 
-    if (firstLine.startsWith('diff --git ')) {
-      const match = firstLine.match(/diff --git a\/(.+?) b\/(.+)$/)
+    if (firstLine.startsWith('diff --git a/')) {
+      const afterA = firstLine.substring('diff --git a/'.length)
+      const bIndex = afterA.indexOf(' b/')
 
-      if (!match) {
-        core.warning(`Could not parse diff header: ${firstLine}`)
-        continue
+      if (bIndex > 0) {
+        const filePath = afterA.substring(0, bIndex)
+
+        const shouldIgnore = ignoredPatterns.some((pattern) => {
+          return minimatch(filePath, pattern)
+        })
+
+        if (shouldIgnore) {
+          removedFilesCount++
+          core.info(`Ignoring file: ${filePath}`)
+          continue
+        }
+
+        filteredSections.push(section)
       }
-
-      const filePath = match[1]
-
-      const shouldIgnore = ignoredPatterns.some((pattern) => {
-        return minimatch(filePath, pattern)
-      })
-
-      if (shouldIgnore) {
-        removedFilesCount++
-        core.info(`Ignoring file: ${filePath}`)
-        continue
-      }
+      core.warning(`Could not parse diff header: ${firstLine}`)
+    } else {
+      filteredSections.push(section)
     }
-
-    filteredSections.push(section)
   }
 
   if (removedFilesCount > 0) {

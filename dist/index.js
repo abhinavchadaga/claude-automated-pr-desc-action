@@ -33346,9 +33346,6 @@ minimatch.Minimatch = Minimatch;
 minimatch.escape = escape;
 minimatch.unescape = unescape;
 
-/**
- * Filter diff to remove files matching ignored patterns
- */
 function filterDiff(diff, ignoredPatterns) {
     if (ignoredPatterns.length === 0) {
         return diff;
@@ -33360,23 +33357,26 @@ function filterDiff(diff, ignoredPatterns) {
     let removedFilesCount = 0;
     for (const section of fileSections) {
         const firstLine = section.split('\n')[0];
-        if (firstLine.startsWith('diff --git ')) {
-            const match = firstLine.match(/diff --git a\/(.+?) b\/(.+)$/);
-            if (!match) {
-                coreExports.warning(`Could not parse diff header: ${firstLine}`);
-                continue;
+        if (firstLine.startsWith('diff --git a/')) {
+            const afterA = firstLine.substring('diff --git a/'.length);
+            const bIndex = afterA.indexOf(' b/');
+            if (bIndex > 0) {
+                const filePath = afterA.substring(0, bIndex);
+                const shouldIgnore = ignoredPatterns.some((pattern) => {
+                    return minimatch(filePath, pattern);
+                });
+                if (shouldIgnore) {
+                    removedFilesCount++;
+                    coreExports.info(`Ignoring file: ${filePath}`);
+                    continue;
+                }
+                filteredSections.push(section);
             }
-            const filePath = match[1];
-            const shouldIgnore = ignoredPatterns.some((pattern) => {
-                return minimatch(filePath, pattern);
-            });
-            if (shouldIgnore) {
-                removedFilesCount++;
-                coreExports.info(`Ignoring file: ${filePath}`);
-                continue;
-            }
+            coreExports.warning(`Could not parse diff header: ${firstLine}`);
         }
-        filteredSections.push(section);
+        else {
+            filteredSections.push(section);
+        }
     }
     if (removedFilesCount > 0) {
         coreExports.info(`Filtered out ${removedFilesCount} files from ignored patterns`);

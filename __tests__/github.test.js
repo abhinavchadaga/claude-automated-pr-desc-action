@@ -318,10 +318,39 @@ index 1234567..abcdefg 100644
       ])
 
       expect(result).toContain('normal/file.ts')
-      expect(core.warning).toHaveBeenCalledTimes(1)
+      expect(result).not.toContain('content with malformed header')
       expect(core.warning).toHaveBeenCalledWith(
         'Could not parse diff header: diff --git a/file/path missing-b-section'
       )
+    })
+
+    it('should include non-diff content in output', async () => {
+      const diffWithNonDiffContent = `Some header text
+or metadata that doesn't start with diff --git
+
+diff --git a/normal/file.ts b/normal/file.ts
+index 1234567..abcdefg 100644
+--- a/normal/file.ts
++++ b/normal/file.ts
+@@ -1 +1,2 @@
+ normal content
++added line
+
+Some footer text or metadata`
+
+      const mockCompareCommitsWithBasehead =
+        mockOctokit.rest.repos.compareCommitsWithBasehead
+      mockCompareCommitsWithBasehead.mockResolvedValue({
+        data: diffWithNonDiffContent
+      })
+
+      const result = await generateDiff(mockOctokit, baseSha, headSha, [
+        '*.fake'
+      ])
+
+      expect(result).toContain('Some header text')
+      expect(result).toContain('normal/file.ts')
+      expect(result).toContain('Some footer text')
     })
   })
 
