@@ -12,7 +12,7 @@ import {
   validatePullRequestEvent,
   validatePullRequestAction,
   extractPRInfo,
-  getApiKeys
+  getConfig
 } from '../src/validation.js'
 
 describe('validation.js', () => {
@@ -366,64 +366,20 @@ describe('validation.js', () => {
     })
   })
 
-  describe('getApiKeys', () => {
-    it('should get API keys from inputs', () => {
+  describe('getConfig', () => {
+    it('should get config from inputs', () => {
       core.getInput.mockImplementation((name) => {
         if (name === 'anthropic-api-key') return 'test-anthropic-key'
         if (name === 'github-token') return 'test-github-token'
         return ''
       })
 
-      const result = getApiKeys()
+      const result = getConfig()
 
       expect(result).toEqual({
         anthropicApiKey: 'test-anthropic-key',
-        githubToken: 'test-github-token'
-      })
-    })
-
-    it('should get API keys from environment variables', () => {
-      process.env.ANTHROPIC_API_KEY = 'env-anthropic-key'
-      process.env.GITHUB_TOKEN = 'env-github-token'
-      core.getInput.mockReturnValue('')
-
-      const result = getApiKeys()
-
-      expect(result).toEqual({
-        anthropicApiKey: 'env-anthropic-key',
-        githubToken: 'env-github-token'
-      })
-    })
-
-    it('should prefer input over environment variable', () => {
-      process.env.ANTHROPIC_API_KEY = 'env-anthropic-key'
-      process.env.GITHUB_TOKEN = 'env-github-token'
-      core.getInput.mockImplementation((name) => {
-        if (name === 'anthropic-api-key') return 'input-anthropic-key'
-        if (name === 'github-token') return 'input-github-token'
-        return ''
-      })
-
-      const result = getApiKeys()
-
-      expect(result).toEqual({
-        anthropicApiKey: 'input-anthropic-key',
-        githubToken: 'input-github-token'
-      })
-    })
-
-    it('should mix input and environment variables', () => {
-      process.env.ANTHROPIC_API_KEY = 'env-anthropic-key'
-      core.getInput.mockImplementation((name) => {
-        if (name === 'github-token') return 'input-github-token'
-        return ''
-      })
-
-      const result = getApiKeys()
-
-      expect(result).toEqual({
-        anthropicApiKey: 'env-anthropic-key',
-        githubToken: 'input-github-token'
+        githubToken: 'test-github-token',
+        ignoredPatterns: []
       })
     })
 
@@ -433,7 +389,7 @@ describe('validation.js', () => {
         return ''
       })
 
-      expect(() => getApiKeys()).toThrow(
+      expect(() => getConfig()).toThrow(
         'Anthropic API key not found. Please set the anthropic-api-key input or ANTHROPIC_API_KEY environment variable.'
       )
     })
@@ -444,7 +400,7 @@ describe('validation.js', () => {
         return ''
       })
 
-      expect(() => getApiKeys()).toThrow(
+      expect(() => getConfig()).toThrow(
         'GitHub token not found. Please set the github-token input or GITHUB_TOKEN environment variable.'
       )
     })
@@ -452,34 +408,89 @@ describe('validation.js', () => {
     it('should throw error when both API keys are missing', () => {
       core.getInput.mockReturnValue('')
 
-      expect(() => getApiKeys()).toThrow(
+      expect(() => getConfig()).toThrow(
         'Anthropic API key not found. Please set the anthropic-api-key input or ANTHROPIC_API_KEY environment variable.'
       )
     })
 
     it('should handle empty string inputs', () => {
-      process.env.ANTHROPIC_API_KEY = 'env-anthropic-key'
-      process.env.GITHUB_TOKEN = 'env-github-token'
-      core.getInput.mockReturnValue('')
+      core.getInput.mockImplementation((name) => {
+        if (name === 'anthropic-api-key') return 'test-anthropic-key'
+        if (name === 'github-token') return 'test-github-token'
+        return ''
+      })
 
-      const result = getApiKeys()
+      const result = getConfig()
 
       expect(result).toEqual({
-        anthropicApiKey: 'env-anthropic-key',
-        githubToken: 'env-github-token'
+        anthropicApiKey: 'test-anthropic-key',
+        githubToken: 'test-github-token',
+        ignoredPatterns: []
       })
     })
 
     it('should handle whitespace-only inputs', () => {
-      process.env.ANTHROPIC_API_KEY = 'env-anthropic-key'
-      process.env.GITHUB_TOKEN = 'env-github-token'
       core.getInput.mockReturnValue('   ')
 
-      const result = getApiKeys()
+      const result = getConfig()
 
       expect(result).toEqual({
         anthropicApiKey: '   ',
-        githubToken: '   '
+        githubToken: '   ',
+        ignoredPatterns: []
+      })
+    })
+
+    it('should parse ignore-patterns input correctly', () => {
+      core.getInput.mockImplementation((name) => {
+        if (name === 'anthropic-api-key') return 'test-anthropic-key'
+        if (name === 'github-token') return 'test-github-token'
+        if (name === 'ignore-patterns')
+          return 'dist/**,**/*.min.js,node_modules/**'
+        return ''
+      })
+
+      const result = getConfig()
+
+      expect(result).toEqual({
+        anthropicApiKey: 'test-anthropic-key',
+        githubToken: 'test-github-token',
+        ignoredPatterns: ['dist/**', '**/*.min.js', 'node_modules/**']
+      })
+    })
+
+    it('should handle ignore-patterns with whitespace', () => {
+      core.getInput.mockImplementation((name) => {
+        if (name === 'anthropic-api-key') return 'test-anthropic-key'
+        if (name === 'github-token') return 'test-github-token'
+        if (name === 'ignore-patterns')
+          return ' dist/** , **/*.min.js , node_modules/** '
+        return ''
+      })
+
+      const result = getConfig()
+
+      expect(result).toEqual({
+        anthropicApiKey: 'test-anthropic-key',
+        githubToken: 'test-github-token',
+        ignoredPatterns: ['dist/**', '**/*.min.js', 'node_modules/**']
+      })
+    })
+
+    it('should handle empty ignore-patterns', () => {
+      core.getInput.mockImplementation((name) => {
+        if (name === 'anthropic-api-key') return 'test-anthropic-key'
+        if (name === 'github-token') return 'test-github-token'
+        if (name === 'ignore-patterns') return ''
+        return ''
+      })
+
+      const result = getConfig()
+
+      expect(result).toEqual({
+        anthropicApiKey: 'test-anthropic-key',
+        githubToken: 'test-github-token',
+        ignoredPatterns: []
       })
     })
   })

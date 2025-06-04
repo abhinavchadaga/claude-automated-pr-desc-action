@@ -2,6 +2,21 @@ name: PR Description Generator
 description: Generates a PR description using Claude
 author: abhinavchadaga
 
+inputs:
+  anthropic-api-key:
+    description: 'Anthropic API key for Claude'
+    required: true
+  github-token:
+    description: 'GitHub token for API access'
+    required: true
+    default: ${{ github.token }}
+  ignore-patterns:
+    description:
+      'Comma-separated list of glob patterns to ignore from diff analysis (e.g.,
+      "dist/**,**/*.min.js,node_modules/**")'
+    required: false
+    default: ''
+
 runs:
   using: node20
   main: dist/index.js

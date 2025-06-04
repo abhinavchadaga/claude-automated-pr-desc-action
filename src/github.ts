@@ -1,11 +1,55 @@
 import * as core from '@actions/core'
 import * as github from '@actions/github'
 import { context } from '@actions/github'
+import { minimatch } from 'minimatch'
+
+/**
+ * Filter diff to remove files matching ignored patterns
+ */
+function filterDiff(diff: string, ignoredPatterns: string[]): string {
+  if (ignoredPatterns.length === 0) {
+    return diff
+  }
+
+  const fileSections = diff
+    .split(/(?=diff --git )/g)
+    .filter((section) => section.trim())
+  const filteredSections: string[] = []
+  let removedFilesCount = 0
+
+  for (const section of fileSections) {
+    const firstLine = section.split('\n')[0]
+
+    if (firstLine.startsWith('diff --git ')) {
+      const match = firstLine.match(/diff --git a\/(.+) b\/(.+)/)
+      const filePath = match![1]
+
+      const shouldIgnore = ignoredPatterns.some((pattern) => {
+        return minimatch(filePath, pattern)
+      })
+
+      if (shouldIgnore) {
+        removedFilesCount++
+        core.info(`Ignoring file: ${filePath}`)
+        continue
+      }
+    }
+
+    filteredSections.push(section)
+  }
+
+  if (removedFilesCount > 0) {
+    core.info(`Filtered out ${removedFilesCount} files from ignored patterns`)
+  }
+
+  return filteredSections.join('')
+}
 
 export async function generateDiff(
   octokit: ReturnType<typeof github.getOctokit>,
   baseSha: string,
-  headSha: string
+  headSha: string,
+  ignoredPatterns: string[] = []
 ): Promise<string> {
   try {
     core.info('Generating diff using GitHub API...')
@@ -18,10 +62,13 @@ export async function generateDiff(
       }
     })
 
-    const diff = response.data as unknown as string
-    core.info(`Computed Diff: ${diff}`)
+    const rawDiff = response.data as unknown as string
+    const filteredDiff = filterDiff(rawDiff, ignoredPatterns)
 
-    return diff
+    core.info(`Raw diff lines: ${rawDiff.split('\n').length}`)
+    core.info(`Filtered diff lines: ${filteredDiff.split('\n').length}`)
+
+    return filteredDiff
   } catch (error) {
     throw new Error(`Failed to generate diff: ${error}`)
   }

@@ -7,9 +7,10 @@ export interface PRInfo {
   url: string
 }
 
-export interface ApiKeys {
+export interface Config {
   anthropicApiKey: string
   githubToken: string
+  ignoredPatterns: string[]
 }
 
 export interface PRContext {

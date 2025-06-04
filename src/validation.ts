@@ -1,6 +1,6 @@
 import * as core from '@actions/core'
 import { context } from '@actions/github'
-import { PRInfo, ApiKeys } from './types.js'
+import { PRInfo, Config } from './types.js'
 
 export function validatePullRequestEvent(): void {
   if (context.eventName !== 'pull_request') {
@@ -44,10 +44,10 @@ export function extractPRInfo(): PRInfo {
   }
 }
 
-export function getApiKeys(): ApiKeys {
-  const anthropicApiKey =
-    core.getInput('anthropic-api-key') || process.env.ANTHROPIC_API_KEY
-  const githubToken = core.getInput('github-token') || process.env.GITHUB_TOKEN
+export function getConfig(): Config {
+  const anthropicApiKey = core.getInput('anthropic-api-key')
+  const githubToken = core.getInput('github-token')
+  const ignorePatternsInput = core.getInput('ignore-patterns')
 
   if (!anthropicApiKey) {
     throw new Error(
@@ -61,8 +61,18 @@ export function getApiKeys(): ApiKeys {
     )
   }
 
+  const ignoredPatterns = ignorePatternsInput
+    .split(',')
+    .map((pattern: string) => pattern.trim())
+    .filter((pattern: string) => pattern.length > 0)
+
+  if (ignoredPatterns.length > 0) {
+    core.info(`Ignoring patterns: ${ignoredPatterns.join(', ')}`)
+  }
+
   return {
     anthropicApiKey,
-    githubToken
+    githubToken,
+    ignoredPatterns
   }
 }

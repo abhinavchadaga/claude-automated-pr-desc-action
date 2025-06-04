@@ -3,7 +3,7 @@ import {
   validatePullRequestEvent,
   validatePullRequestAction,
   extractPRInfo,
-  getApiKeys
+  getConfig
 } from './validation.js'
 import {
   generateDiff,
@@ -21,7 +21,7 @@ export async function run(): Promise<void> {
 
     validatePullRequestEvent()
     validatePullRequestAction()
-    const config = getApiKeys()
+    const config = getConfig()
     const prInfo = extractPRInfo()
 
     core.info(`Analyzing PR #${prInfo.number}: ${prInfo.title}`)
@@ -32,7 +32,12 @@ export async function run(): Promise<void> {
     const octokit = github.getOctokit(config.githubToken)
 
     const [diff, commitMessages] = await Promise.all([
-      generateDiff(octokit, prInfo.baseSha, prInfo.headSha),
+      generateDiff(
+        octokit,
+        prInfo.baseSha,
+        prInfo.headSha,
+        config.ignoredPatterns
+      ),
       getCommitMessages(octokit, prInfo.number)
     ])
 
@@ -57,5 +62,3 @@ export async function run(): Promise<void> {
     core.setFailed(errorMessage)
   }
 }
-
-run()

@@ -53,7 +53,8 @@ describe('github.js', () => {
       expect(core.info).toHaveBeenCalledWith(
         'Generating diff using GitHub API...'
       )
-      expect(core.info).toHaveBeenCalledWith(`Computed Diff: ${expectedDiff}`)
+      expect(core.info).toHaveBeenCalledWith(`Raw diff lines: 3`)
+      expect(core.info).toHaveBeenCalledWith(`Filtered diff lines: 3`)
     })
 
     it('should handle empty diff', async () => {
@@ -67,7 +68,8 @@ describe('github.js', () => {
       const result = await generateDiff(mockOctokit, baseSha, headSha)
 
       expect(result).toBe(emptyDiff)
-      expect(core.info).toHaveBeenCalledWith('Computed Diff: ')
+      expect(core.info).toHaveBeenCalledWith('Raw diff lines: 1')
+      expect(core.info).toHaveBeenCalledWith('Filtered diff lines: 1')
     })
 
     it('should handle API errors', async () => {
@@ -101,6 +103,190 @@ describe('github.js', () => {
       await expect(generateDiff(mockOctokit, baseSha, headSha)).rejects.toThrow(
         'Failed to generate diff: Error: Not Found'
       )
+    })
+
+    it('should filter out ignored patterns', async () => {
+      const diffWithBuildFiles = `diff --git a/src/file.ts b/src/file.ts
+index 1234567..abcdefg 100644
+--- a/src/file.ts
++++ b/src/file.ts
+@@ -1,3 +1,4 @@
+ function test() {
++  console.log('new line')
+   return true
+ }
+diff --git a/dist/bundle.js b/dist/bundle.js
+index 9876543..fedcba9 100644
+--- a/dist/bundle.js
++++ b/dist/bundle.js
+@@ -1,1000 +1,1000 @@
+ // Minified build file with thousands of lines
++// More minified content
+diff --git a/package.json b/package.json
+index 1111111..2222222 100644
+--- a/package.json
++++ b/package.json
+@@ -1,5 +1,6 @@
+ {
+   "name": "test",
++  "version": "1.0.1",
+   "scripts": {
+     "build": "rollup"
+   }
+`
+
+      const mockCompareCommitsWithBasehead =
+        mockOctokit.rest.repos.compareCommitsWithBasehead
+      mockCompareCommitsWithBasehead.mockResolvedValue({
+        data: diffWithBuildFiles
+      })
+
+      const result = await generateDiff(mockOctokit, baseSha, headSha, [
+        'dist/**'
+      ])
+
+      expect(result).not.toContain('dist/bundle.js')
+      expect(result).toContain('src/file.ts')
+      expect(result).toContain('package.json')
+      expect(core.info).toHaveBeenCalledWith('Ignoring file: dist/bundle.js')
+      expect(core.info).toHaveBeenCalledWith(
+        'Filtered out 1 files from ignored patterns'
+      )
+    })
+
+    it('should handle multiple ignored patterns', async () => {
+      const diffWithMultipleFiles = `diff --git a/src/file.ts b/src/file.ts
+--- a/src/file.ts
++++ b/src/file.ts
+@@ -1 +1,2 @@
+ test
++new line
+diff --git a/dist/bundle.js b/dist/bundle.js
+--- a/dist/bundle.js
++++ b/dist/bundle.js
+@@ -1 +1,2 @@
+ minified
++more minified
+diff --git a/node_modules/package/index.js b/node_modules/package/index.js
+--- a/node_modules/package/index.js
++++ b/node_modules/package/index.js
+@@ -1 +1,2 @@
+ dependency
++updated dependency`
+
+      const mockCompareCommitsWithBasehead =
+        mockOctokit.rest.repos.compareCommitsWithBasehead
+      mockCompareCommitsWithBasehead.mockResolvedValue({
+        data: diffWithMultipleFiles
+      })
+
+      const result = await generateDiff(mockOctokit, baseSha, headSha, [
+        'dist/**',
+        'node_modules/**'
+      ])
+
+      expect(result).not.toContain('dist/bundle.js')
+      expect(result).not.toContain('node_modules/package/index.js')
+      expect(result).toContain('src/file.ts')
+    })
+
+    it('should not filter when no ignored patterns provided', async () => {
+      const expectedDiff = `diff --git a/dist/file.js b/dist/file.js
++added line
+-removed line`
+      const mockCompareCommitsWithBasehead =
+        mockOctokit.rest.repos.compareCommitsWithBasehead
+      mockCompareCommitsWithBasehead.mockResolvedValue({
+        data: expectedDiff
+      })
+
+      const result = await generateDiff(mockOctokit, baseSha, headSha, [])
+
+      expect(result).toBe(expectedDiff)
+      expect(result).toContain('dist/file.js')
+    })
+
+    it('should filter files by specific file pattern', async () => {
+      const diffWithMinifiedFiles = `diff --git a/src/file.ts b/src/file.ts
+--- a/src/file.ts
++++ b/src/file.ts
+@@ -1 +1,2 @@
+ function test() {}
++console.log('added')
+diff --git a/dist/bundle.min.js b/dist/bundle.min.js
+--- a/dist/bundle.min.js
++++ b/dist/bundle.min.js
+@@ -1 +1,2 @@
+ minified content
++more minified
+diff --git a/src/utils.min.js b/src/utils.min.js
+--- a/src/utils.min.js
++++ b/src/utils.min.js
+@@ -1 +1,2 @@
+ utility functions
++more utilities`
+
+      const mockCompareCommitsWithBasehead =
+        mockOctokit.rest.repos.compareCommitsWithBasehead
+      mockCompareCommitsWithBasehead.mockResolvedValue({
+        data: diffWithMinifiedFiles
+      })
+
+      const result = await generateDiff(mockOctokit, baseSha, headSha, [
+        '**/*.min.js'
+      ])
+
+      expect(result).toContain('src/file.ts')
+      expect(result).not.toContain('bundle.min.js')
+      expect(result).not.toContain('utils.min.js')
+      expect(core.info).toHaveBeenCalledWith(
+        'Ignoring file: dist/bundle.min.js'
+      )
+      expect(core.info).toHaveBeenCalledWith('Ignoring file: src/utils.min.js')
+    })
+
+    it('should filter files by mixed patterns', async () => {
+      const diffWithMixedFiles = `diff --git a/src/component.tsx b/src/component.tsx
+--- a/src/component.tsx
++++ b/src/component.tsx
+@@ -1 +1,2 @@
+ export default function() {}
++added feature
+diff --git a/dist/bundle.js b/dist/bundle.js
+--- a/dist/bundle.js
++++ b/dist/bundle.js
+@@ -1 +1,2 @@
+ bundled code
++more code
+diff --git a/coverage/report.html b/coverage/report.html
+--- a/coverage/report.html
++++ b/coverage/report.html
+@@ -1 +1,2 @@
+ <html>coverage</html>
++more coverage
+diff --git a/temp.log b/temp.log
+--- a/temp.log
++++ b/temp.log
+@@ -1 +1,2 @@
+ log entry
++new log`
+
+      const mockCompareCommitsWithBasehead =
+        mockOctokit.rest.repos.compareCommitsWithBasehead
+      mockCompareCommitsWithBasehead.mockResolvedValue({
+        data: diffWithMixedFiles
+      })
+
+      const result = await generateDiff(mockOctokit, baseSha, headSha, [
+        'dist/**',
+        'coverage/**',
+        '*.log'
+      ])
+
+      expect(result).toContain('src/component.tsx')
+      expect(result).not.toContain('dist/bundle.js')
+      expect(result).not.toContain('coverage/report.html')
+      expect(result).not.toContain('temp.log')
     })
   })
 

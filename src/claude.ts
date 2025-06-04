@@ -34,9 +34,6 @@ Guidelines:
 Respond with ONLY the markdown content - no meta-commentary.
 `
 
-/**
- * Generate PR description using Claude
- */
 export async function generatePRDescription(
   apiKey: string,
   prContext: PRContext
