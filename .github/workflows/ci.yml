@@ -4,9 +4,6 @@ on:
   pull_request:
     branches:
       - main
-  push:
-    branches:
-      - main
 
 permissions:
   contents: read
@@ -48,7 +45,6 @@ jobs:
     name: GitHub Actions Test
     runs-on: ubuntu-latest
     permissions:
-      contents: read
       pull-requests: write
 
     steps:
