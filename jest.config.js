@@ -4,35 +4,38 @@
 export default {
   clearMocks: true,
   collectCoverage: true,
-  collectCoverageFrom: ['./src/**'],
+  collectCoverageFrom: ['./src/**', '!./src/main.ts'],
   coverageDirectory: './coverage',
   coveragePathIgnorePatterns: ['/node_modules/', '/dist/'],
   coverageReporters: ['json-summary', 'text', 'lcov'],
-  // Uncomment the below lines if you would like to enforce a coverage threshold
-  // for your action. This will fail the build if the coverage is below the
-  // specified thresholds.
-  // coverageThreshold: {
-  //   global: {
-  //     branches: 100,
-  //     functions: 100,
-  //     lines: 100,
-  //     statements: 100
-  //   }
-  // },
+  coverageThreshold: {
+    global: {
+      branches: 100,
+      functions: 100,
+      lines: 100,
+      statements: 100
+    }
+  },
   extensionsToTreatAsEsm: ['.ts'],
   moduleFileExtensions: ['ts', 'js'],
+  moduleNameMapper: {
+    '^@actions/core$': '<rootDir>/__fixtures__/core.ts',
+    '^@actions/github$': '<rootDir>/__fixtures__/github.ts',
+    '^@anthropic-ai/sdk$': '<rootDir>/__fixtures__/anthropic.ts'
+  },
   preset: 'ts-jest',
   reporters: ['default'],
   resolver: 'ts-jest-resolver',
   testEnvironment: 'node',
-  testMatch: ['**/*.test.ts'],
+  testMatch: ['**/*.test.ts', '**/*.test.js'],
   testPathIgnorePatterns: ['/dist/', '/node_modules/'],
   transform: {
     '^.+\\.ts$': [
       'ts-jest',
       {
         tsconfig: 'tsconfig.eslint.json',
-        useESM: true
+        useESM: true,
+        isolatedModules: true
       }
     ]
   },
