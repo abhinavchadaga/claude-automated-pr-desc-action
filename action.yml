@@ -1,23 +1,24 @@
-name: The name of your action here
-description: Provide a description here
-author: Your name or organization here
+name: PR Description Generator
+description: Generates a PR description using Claude
+author: abhinavchadaga
 
-# Add your action's branding here. This will appear on the GitHub Marketplace.
-branding:
-  icon: heart
-  color: red
-
-# Define your inputs here.
 inputs:
-  milliseconds:
-    description: Your input description here
+  anthropic-api-key:
+    description: 'Anthropic API key for Claude'
     required: true
-    default: '1000'
-
-# Define your outputs here.
+  github-token:
+    description: 'GitHub token for API access'
+    required: true
+    default: ${{ github.token }}
+  ignore-patterns:
+    description:
+      'Comma-separated list of glob patterns to ignore from diff analysis (e.g.,
+      "dist/**,**/*.min.js,node_modules/**")'
+    required: false
+    default: ''
 outputs:
-  time:
-    description: Your output description here
+  description:
+    description: 'Generated PR description'
 
 runs:
   using: node20
