@@ -21,6 +21,11 @@ export default {
   // },
   extensionsToTreatAsEsm: ['.ts'],
   moduleFileExtensions: ['ts', 'js'],
+  moduleNameMapper: {
+    '^@actions/core$': '<rootDir>/__fixtures__/core.ts',
+    '^@actions/github$': '<rootDir>/__fixtures__/github.ts',
+    '^@anthropic-ai/sdk$': '<rootDir>/__fixtures__/anthropic.ts'
+  },
   preset: 'ts-jest',
   reporters: ['default'],
   resolver: 'ts-jest-resolver',
@@ -32,7 +37,8 @@ export default {
       'ts-jest',
       {
         tsconfig: 'tsconfig.eslint.json',
-        useESM: true
+        useESM: true,
+        isolatedModules: true
       }
     ]
   },

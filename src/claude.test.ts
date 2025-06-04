@@ -1,15 +1,15 @@
-import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals'
+import {
+  jest,
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach
+} from '@jest/globals'
 import * as core from '@actions/core'
-import { Anthropic } from '@anthropic-ai/sdk'
+import { Anthropic, _mockMessagesCreate } from '@anthropic-ai/sdk'
 import { generatePRDescription } from './claude.js'
 import { PRContext } from './types.js'
-
-// Mock the dependencies
-jest.mock('@actions/core')
-jest.mock('@anthropic-ai/sdk')
-
-const mockCore = core as jest.Mocked<typeof core>
-const mockAnthropic = Anthropic as jest.MockedClass<typeof Anthropic>
 
 describe('claude.ts', () => {
   const mockApiKey = 'test-api-key'
@@ -26,21 +26,8 @@ describe('claude.ts', () => {
     diff: '+++ added file\n--- removed file'
   }
 
-  let mockAnthropicInstance: jest.Mocked<InstanceType<typeof Anthropic>>
-  let mockMessagesCreate: jest.MockedFunction<any>
-
   beforeEach(() => {
     jest.clearAllMocks()
-    
-    // Setup Anthropic mock
-    mockMessagesCreate = jest.fn()
-    mockAnthropicInstance = {
-      messages: {
-        create: mockMessagesCreate
-      }
-    } as any
-    
-    mockAnthropic.mockImplementation(() => mockAnthropicInstance)
   })
 
   afterEach(() => {
@@ -65,15 +52,15 @@ describe('claude.ts', () => {
         }
       }
 
-      mockMessagesCreate.mockResolvedValue(mockResponse)
+      _mockMessagesCreate.mockResolvedValue(mockResponse)
 
       // Act
       const result = await generatePRDescription(mockApiKey, mockPRContext)
 
       // Assert
       expect(result).toBe(expectedDescription)
-      expect(mockAnthropic).toHaveBeenCalledWith({ apiKey: mockApiKey })
-      expect(mockMessagesCreate).toHaveBeenCalledWith({
+      expect(Anthropic).toHaveBeenCalledWith({ apiKey: mockApiKey })
+      expect(_mockMessagesCreate).toHaveBeenCalledWith({
         model: 'claude-3-5-haiku-latest',
         max_tokens: 1000,
         temperature: 0.3,
@@ -102,9 +89,9 @@ describe('claude.ts', () => {
         ]
       })
 
-      expect(mockCore.info).toHaveBeenCalledWith('Generating PR description with Claude...')
-      expect(mockCore.info).toHaveBeenCalledWith('Generated PR description successfully')
-      expect(mockCore.info).toHaveBeenCalledWith('Token usage: input=100, output=50')
+      expect(core.info).toHaveBeenCalledWith('Generating PR description with Claude...')
+      expect(core.info).toHaveBeenCalledWith('Generated PR description successfully')
+      expect(core.info).toHaveBeenCalledWith('Token usage: input=100, output=50')
     })
 
     it('should log cache hit information when cache is used', async () => {
@@ -123,14 +110,14 @@ describe('claude.ts', () => {
         }
       }
 
-      mockMessagesCreate.mockResolvedValue(mockResponse)
+      _mockMessagesCreate.mockResolvedValue(mockResponse)
 
       // Act
       await generatePRDescription(mockApiKey, mockPRContext)
 
       // Assert
-      expect(mockCore.info).toHaveBeenCalledWith('Cache hit! Saved tokens: 75')
-      expect(mockCore.info).toHaveBeenCalledWith('Cache hit rate: 60%')
+      expect(core.info).toHaveBeenCalledWith('Cache hit! Saved tokens: 75')
+      expect(core.info).toHaveBeenCalledWith('Cache hit rate: 60%')
     })
 
     it('should handle empty content in response', async () => {
@@ -144,7 +131,7 @@ describe('claude.ts', () => {
         }
       }
 
-      mockMessagesCreate.mockResolvedValue(mockResponse)
+      _mockMessagesCreate.mockResolvedValue(mockResponse)
 
       // Act & Assert
       await expect(generatePRDescription(mockApiKey, mockPRContext))
@@ -168,7 +155,7 @@ describe('claude.ts', () => {
         }
       }
 
-      mockMessagesCreate.mockResolvedValue(mockResponse)
+      _mockMessagesCreate.mockResolvedValue(mockResponse)
 
       // Act & Assert
       await expect(generatePRDescription(mockApiKey, mockPRContext))
@@ -187,7 +174,7 @@ describe('claude.ts', () => {
         }
       }
 
-      mockMessagesCreate.mockResolvedValue(mockResponse)
+      _mockMessagesCreate.mockResolvedValue(mockResponse)
 
       // Act & Assert
       await expect(generatePRDescription(mockApiKey, mockPRContext))
@@ -198,7 +185,7 @@ describe('claude.ts', () => {
     it('should handle API errors from Anthropic', async () => {
       // Arrange
       const apiError = new Error('API quota exceeded')
-      mockMessagesCreate.mockRejectedValue(apiError)
+      _mockMessagesCreate.mockRejectedValue(apiError)
 
       // Act & Assert
       await expect(generatePRDescription(mockApiKey, mockPRContext))
@@ -209,7 +196,7 @@ describe('claude.ts', () => {
     it('should handle network errors', async () => {
       // Arrange
       const networkError = new Error('Network timeout')
-      mockMessagesCreate.mockRejectedValue(networkError)
+      _mockMessagesCreate.mockRejectedValue(networkError)
 
       // Act & Assert
       await expect(generatePRDescription(mockApiKey, mockPRContext))
@@ -233,7 +220,7 @@ describe('claude.ts', () => {
         }
       }
 
-      mockMessagesCreate.mockResolvedValue(mockResponse)
+      _mockMessagesCreate.mockResolvedValue(mockResponse)
 
       const largePRContext: PRContext = {
         ...mockPRContext,
@@ -245,13 +232,13 @@ describe('claude.ts', () => {
       await generatePRDescription(mockApiKey, largePRContext)
 
       // Assert
-      expect(mockCore.info).toHaveBeenCalledWith(
+      expect(core.info).toHaveBeenCalledWith(
         expect.stringMatching(/Context size: \d+ characters/)
       )
-      expect(mockCore.info).toHaveBeenCalledWith(
+      expect(core.info).toHaveBeenCalledWith(
         'Commit messages found: 10 commits'
       )
-      expect(mockCore.info).toHaveBeenCalledWith(
+      expect(core.info).toHaveBeenCalledWith(
         'Diff lines: 100 lines'
       )
     })
@@ -272,13 +259,13 @@ describe('claude.ts', () => {
         }
       }
 
-      mockMessagesCreate.mockResolvedValue(mockResponse)
+      _mockMessagesCreate.mockResolvedValue(mockResponse)
 
       // Act
       await generatePRDescription(mockApiKey, mockPRContext)
 
       // Assert
-      const call = mockMessagesCreate.mock.calls[0][0]
+      const call = _mockMessagesCreate.mock.calls[0][0]
       expect(call.system[0].text).toContain('You are a technical writer')
       expect(call.system[0].text).toContain('## Summary')
       expect(call.system[0].text).toContain('## Changes Made')
@@ -302,13 +289,13 @@ describe('claude.ts', () => {
         }
       }
 
-      mockMessagesCreate.mockResolvedValue(mockResponse)
+      _mockMessagesCreate.mockResolvedValue(mockResponse)
 
       // Act
       await generatePRDescription(mockApiKey, mockPRContext)
 
       // Assert
-      const call = mockMessagesCreate.mock.calls[0][0]
+      const call = _mockMessagesCreate.mock.calls[0][0]
       const contextContent = call.messages[0].content[1].text
       
       expect(contextContent).toContain('Pull Request Title: Test PR')

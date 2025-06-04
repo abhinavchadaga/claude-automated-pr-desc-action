@@ -15,33 +15,38 @@ import {
   getApiKeys
 } from './validation.js'
 
-// Mock the dependencies
-jest.mock('@actions/core')
-jest.mock('@actions/github')
-
-const mockCore = core as jest.Mocked<typeof core>
-const mockContext = context as jest.Mocked<typeof context>
-
 describe('validation.ts', () => {
+  const originalEnv = process.env
+
   beforeEach(() => {
     jest.clearAllMocks()
-    
+
     // Reset process.exit mock
     jest.spyOn(process, 'exit').mockImplementation(() => {
       throw new Error('process.exit called')
+    })
+    
+    // Reset environment
+    process.env = { ...originalEnv }
+    delete process.env.ANTHROPIC_API_KEY
+    delete process.env.GITHUB_TOKEN
+    
+    // Reset context
+    Object.assign(context, {
+      eventName: '',
+      payload: {}
     })
   })
 
   afterEach(() => {
     jest.restoreAllMocks()
+    process.env = originalEnv
   })
 
   describe('validatePullRequestEvent', () => {
     it('should pass validation for pull_request event', () => {
       // Arrange
-      Object.assign(mockContext, {
-        eventName: 'pull_request'
-      })
+      context.eventName = 'pull_request'
 
       // Act & Assert
       expect(() => validatePullRequestEvent()).not.toThrow()
@@ -49,9 +54,7 @@ describe('validation.ts', () => {
 
     it('should throw error for push event', () => {
       // Arrange
-      Object.assign(mockContext, {
-        eventName: 'push'
-      })
+      context.eventName = 'push'
 
       // Act & Assert
       expect(() => validatePullRequestEvent()).toThrow(
@@ -61,9 +64,7 @@ describe('validation.ts', () => {
 
     it('should throw error for issue event', () => {
       // Arrange
-      Object.assign(mockContext, {
-        eventName: 'issues'
-      })
+      context.eventName = 'issues'
 
       // Act & Assert
       expect(() => validatePullRequestEvent()).toThrow(
@@ -73,9 +74,7 @@ describe('validation.ts', () => {
 
     it('should throw error for workflow_dispatch event', () => {
       // Arrange
-      Object.assign(mockContext, {
-        eventName: 'workflow_dispatch'
-      })
+      context.eventName = 'workflow_dispatch'
 
       // Act & Assert
       expect(() => validatePullRequestEvent()).toThrow(
@@ -85,9 +84,7 @@ describe('validation.ts', () => {
 
     it('should throw error for undefined event', () => {
       // Arrange
-      Object.assign(mockContext, {
-        eventName: undefined
-      })
+      context.eventName = undefined as any
 
       // Act & Assert
       expect(() => validatePullRequestEvent()).toThrow(
@@ -99,11 +96,9 @@ describe('validation.ts', () => {
   describe('validatePullRequestAction', () => {
     it('should pass validation for opened action', () => {
       // Arrange
-      Object.assign(mockContext, {
-        payload: {
-          action: 'opened'
-        }
-      })
+      context.payload = {
+        action: 'opened'
+      }
 
       // Act & Assert
       expect(() => validatePullRequestAction()).not.toThrow()
@@ -111,11 +106,9 @@ describe('validation.ts', () => {
 
     it('should pass validation for synchronize action', () => {
       // Arrange
-      Object.assign(mockContext, {
-        payload: {
-          action: 'synchronize'
-        }
-      })
+      context.payload = {
+        action: 'synchronize'
+      }
 
       // Act & Assert
       expect(() => validatePullRequestAction()).not.toThrow()
@@ -123,11 +116,9 @@ describe('validation.ts', () => {
 
     it('should pass validation for reopened action', () => {
       // Arrange
-      Object.assign(mockContext, {
-        payload: {
-          action: 'reopened'
-        }
-      })
+      context.payload = {
+        action: 'reopened'
+      }
 
       // Act & Assert
       expect(() => validatePullRequestAction()).not.toThrow()
@@ -135,88 +126,76 @@ describe('validation.ts', () => {
 
     it('should exit process for closed action', () => {
       // Arrange
-      Object.assign(mockContext, {
-        payload: {
-          action: 'closed'
-        }
-      })
+      context.payload = {
+        action: 'closed'
+      }
 
       // Act & Assert
       expect(() => validatePullRequestAction()).toThrow('process.exit called')
-      expect(mockCore.info).toHaveBeenCalledWith(
+      expect(core.info).toHaveBeenCalledWith(
         'Skipping action for PR action: closed'
       )
     })
 
     it('should exit process for edited action', () => {
       // Arrange
-      Object.assign(mockContext, {
-        payload: {
-          action: 'edited'
-        }
-      })
+      context.payload = {
+        action: 'edited'
+      }
 
       // Act & Assert
       expect(() => validatePullRequestAction()).toThrow('process.exit called')
-      expect(mockCore.info).toHaveBeenCalledWith(
+      expect(core.info).toHaveBeenCalledWith(
         'Skipping action for PR action: edited'
       )
     })
 
     it('should exit process for unknown action', () => {
       // Arrange
-      Object.assign(mockContext, {
-        payload: {
-          action: 'some_unknown_action'
-        }
-      })
+      context.payload = {
+        action: 'some_unknown_action'
+      }
 
       // Act & Assert
       expect(() => validatePullRequestAction()).toThrow('process.exit called')
-      expect(mockCore.info).toHaveBeenCalledWith(
+      expect(core.info).toHaveBeenCalledWith(
         'Skipping action for PR action: some_unknown_action'
       )
     })
 
     it('should exit process for null action', () => {
       // Arrange
-      Object.assign(mockContext, {
-        payload: {
-          action: null
-        }
-      })
+      context.payload = {
+        action: null
+      }
 
       // Act & Assert
       expect(() => validatePullRequestAction()).toThrow('process.exit called')
-      expect(mockCore.info).toHaveBeenCalledWith(
+      expect(core.info).toHaveBeenCalledWith(
         'Skipping action for PR action: unknown'
       )
     })
 
     it('should exit process for undefined action', () => {
       // Arrange
-      Object.assign(mockContext, {
-        payload: {
-          action: undefined
-        }
-      })
+      context.payload = {
+        action: undefined
+      }
 
       // Act & Assert
       expect(() => validatePullRequestAction()).toThrow('process.exit called')
-      expect(mockCore.info).toHaveBeenCalledWith(
+      expect(core.info).toHaveBeenCalledWith(
         'Skipping action for PR action: unknown'
       )
     })
 
     it('should exit process for missing payload', () => {
       // Arrange
-      Object.assign(mockContext, {
-        payload: {}
-      })
+      context.payload = {}
 
       // Act & Assert
       expect(() => validatePullRequestAction()).toThrow('process.exit called')
-      expect(mockCore.info).toHaveBeenCalledWith(
+      expect(core.info).toHaveBeenCalledWith(
         'Skipping action for PR action: unknown'
       )
     })
@@ -240,11 +219,9 @@ describe('validation.ts', () => {
         html_url: 'https://github.com/owner/repo/pull/123'
       }
 
-      Object.assign(mockContext, {
-        payload: {
-          pull_request: mockPR
-        }
-      })
+      context.payload = {
+        pull_request: mockPR
+      }
 
       // Act
       const result = extractPRInfo()
@@ -262,28 +239,20 @@ describe('validation.ts', () => {
 
     it('should throw error when pull_request is missing', () => {
       // Arrange
-      Object.assign(mockContext, {
-        payload: {}
-      })
+      context.payload = {}
 
       // Act & Assert
-      expect(() => extractPRInfo()).toThrow(
-        'No pull request found in context'
-      )
+      expect(() => extractPRInfo()).toThrow('No pull request found in context')
     })
 
     it('should throw error when pull_request is null', () => {
       // Arrange
-      Object.assign(mockContext, {
-        payload: {
-          pull_request: null
-        }
-      })
+      context.payload = {
+        pull_request: null
+      }
 
       // Act & Assert
-      expect(() => extractPRInfo()).toThrow(
-        'No pull request found in context'
-      )
+      expect(() => extractPRInfo()).toThrow('No pull request found in context')
     })
 
     it('should throw error when title is missing', () => {
@@ -303,11 +272,9 @@ describe('validation.ts', () => {
         html_url: 'https://github.com/owner/repo/pull/123'
       }
 
-      Object.assign(mockContext, {
-        payload: {
-          pull_request: mockPR
-        }
-      })
+      context.payload = {
+        pull_request: mockPR
+      }
 
       // Act & Assert
       expect(() => extractPRInfo()).toThrow(
@@ -330,11 +297,9 @@ describe('validation.ts', () => {
         html_url: 'https://github.com/owner/repo/pull/123'
       }
 
-      Object.assign(mockContext, {
-        payload: {
-          pull_request: mockPR
-        }
-      })
+      context.payload = {
+        pull_request: mockPR
+      }
 
       // Act & Assert
       expect(() => extractPRInfo()).toThrow(
@@ -359,11 +324,9 @@ describe('validation.ts', () => {
         html_url: 'https://github.com/owner/repo/pull/123'
       }
 
-      Object.assign(mockContext, {
-        payload: {
-          pull_request: mockPR
-        }
-      })
+      context.payload = {
+        pull_request: mockPR
+      }
 
       // Act & Assert
       expect(() => extractPRInfo()).toThrow(
@@ -388,11 +351,9 @@ describe('validation.ts', () => {
         html_url: 'https://github.com/owner/repo/pull/123'
       }
 
-      Object.assign(mockContext, {
-        payload: {
-          pull_request: mockPR
-        }
-      })
+      context.payload = {
+        pull_request: mockPR
+      }
 
       // Act & Assert
       expect(() => extractPRInfo()).toThrow(
@@ -417,11 +378,9 @@ describe('validation.ts', () => {
         html_url: 'https://github.com/owner/repo/pull/123'
       }
 
-      Object.assign(mockContext, {
-        payload: {
-          pull_request: mockPR
-        }
-      })
+      context.payload = {
+        pull_request: mockPR
+      }
 
       // Act & Assert
       expect(() => extractPRInfo()).toThrow(
@@ -446,11 +405,9 @@ describe('validation.ts', () => {
         html_url: null
       }
 
-      Object.assign(mockContext, {
-        payload: {
-          pull_request: mockPR
-        }
-      })
+      context.payload = {
+        pull_request: mockPR
+      }
 
       // Act & Assert
       expect(() => extractPRInfo()).toThrow(
@@ -460,22 +417,9 @@ describe('validation.ts', () => {
   })
 
   describe('getApiKeys', () => {
-    const originalEnv = process.env
-
-    beforeEach(() => {
-      // Reset environment variables
-      process.env = { ...originalEnv }
-      delete process.env.ANTHROPIC_API_KEY
-      delete process.env.GITHUB_TOKEN
-    })
-
-    afterEach(() => {
-      process.env = originalEnv
-    })
-
     it('should get API keys from inputs', () => {
       // Arrange
-      mockCore.getInput.mockImplementation((name: string) => {
+      ;(core.getInput as jest.MockedFunction<typeof core.getInput>).mockImplementation((name: string) => {
         if (name === 'anthropic-api-key') return 'test-anthropic-key'
         if (name === 'github-token') return 'test-github-token'
         return ''
@@ -495,7 +439,7 @@ describe('validation.ts', () => {
       // Arrange
       process.env.ANTHROPIC_API_KEY = 'env-anthropic-key'
       process.env.GITHUB_TOKEN = 'env-github-token'
-      mockCore.getInput.mockReturnValue('')
+      ;(core.getInput as jest.MockedFunction<typeof core.getInput>).mockReturnValue('')
 
       // Act
       const result = getApiKeys()
@@ -511,7 +455,7 @@ describe('validation.ts', () => {
       // Arrange
       process.env.ANTHROPIC_API_KEY = 'env-anthropic-key'
       process.env.GITHUB_TOKEN = 'env-github-token'
-      mockCore.getInput.mockImplementation((name: string) => {
+      ;(core.getInput as jest.MockedFunction<typeof core.getInput>).mockImplementation((name: string) => {
         if (name === 'anthropic-api-key') return 'input-anthropic-key'
         if (name === 'github-token') return 'input-github-token'
         return ''
@@ -530,7 +474,7 @@ describe('validation.ts', () => {
     it('should mix input and environment variables', () => {
       // Arrange
       process.env.ANTHROPIC_API_KEY = 'env-anthropic-key'
-      mockCore.getInput.mockImplementation((name: string) => {
+      ;(core.getInput as jest.MockedFunction<typeof core.getInput>).mockImplementation((name: string) => {
         if (name === 'github-token') return 'input-github-token'
         return ''
       })
@@ -547,7 +491,7 @@ describe('validation.ts', () => {
 
     it('should throw error when Anthropic API key is missing', () => {
       // Arrange
-      mockCore.getInput.mockImplementation((name: string) => {
+      ;(core.getInput as jest.MockedFunction<typeof core.getInput>).mockImplementation((name: string) => {
         if (name === 'github-token') return 'test-github-token'
         return ''
       })
@@ -560,7 +504,7 @@ describe('validation.ts', () => {
 
     it('should throw error when GitHub token is missing', () => {
       // Arrange
-      mockCore.getInput.mockImplementation((name: string) => {
+      ;(core.getInput as jest.MockedFunction<typeof core.getInput>).mockImplementation((name: string) => {
         if (name === 'anthropic-api-key') return 'test-anthropic-key'
         return ''
       })
@@ -573,7 +517,7 @@ describe('validation.ts', () => {
 
     it('should throw error when both API keys are missing', () => {
       // Arrange
-      mockCore.getInput.mockReturnValue('')
+      ;(core.getInput as jest.MockedFunction<typeof core.getInput>).mockReturnValue('')
 
       // Act & Assert
       expect(() => getApiKeys()).toThrow(
@@ -585,7 +529,7 @@ describe('validation.ts', () => {
       // Arrange
       process.env.ANTHROPIC_API_KEY = 'env-anthropic-key'
       process.env.GITHUB_TOKEN = 'env-github-token'
-      mockCore.getInput.mockReturnValue('')
+      ;(core.getInput as jest.MockedFunction<typeof core.getInput>).mockReturnValue('')
 
       // Act
       const result = getApiKeys()
@@ -601,7 +545,7 @@ describe('validation.ts', () => {
       // Arrange
       process.env.ANTHROPIC_API_KEY = 'env-anthropic-key'
       process.env.GITHUB_TOKEN = 'env-github-token'
-      mockCore.getInput.mockReturnValue('   ')
+      ;(core.getInput as jest.MockedFunction<typeof core.getInput>).mockReturnValue('   ')
 
       // Act
       const result = getApiKeys()
