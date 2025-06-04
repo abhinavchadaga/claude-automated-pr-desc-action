@@ -12,5 +12,4 @@ export const AnthropicMock = jest.fn().mockImplementation(() => ({
 // Export named export matching the real module
 export { AnthropicMock as Anthropic }
 
-// Export for test access
 export const _mockMessagesCreate = mockMessagesCreate
