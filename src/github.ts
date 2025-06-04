@@ -21,8 +21,14 @@ function filterDiff(diff: string, ignoredPatterns: string[]): string {
     const firstLine = section.split('\n')[0]
 
     if (firstLine.startsWith('diff --git ')) {
-      const match = firstLine.match(/diff --git a\/(.+) b\/(.+)/)
-      const filePath = match![1]
+      const match = firstLine.match(/diff --git a\/(.+?) b\/(.+)$/)
+
+      if (!match) {
+        core.warning(`Could not parse diff header: ${firstLine}`)
+        continue
+      }
+
+      const filePath = match[1]
 
       const shouldIgnore = ignoredPatterns.some((pattern) => {
         return minimatch(filePath, pattern)

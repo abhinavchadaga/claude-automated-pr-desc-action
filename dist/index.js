@@ -33361,7 +33361,11 @@ function filterDiff(diff, ignoredPatterns) {
     for (const section of fileSections) {
         const firstLine = section.split('\n')[0];
         if (firstLine.startsWith('diff --git ')) {
-            const match = firstLine.match(/diff --git a\/(.+) b\/(.+)/);
+            const match = firstLine.match(/diff --git a\/(.+?) b\/(.+)$/);
+            if (!match) {
+                coreExports.warning(`Could not parse diff header: ${firstLine}`);
+                continue;
+            }
             const filePath = match[1];
             const shouldIgnore = ignoredPatterns.some((pattern) => {
                 return minimatch(filePath, pattern);

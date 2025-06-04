@@ -288,6 +288,41 @@ diff --git a/temp.log b/temp.log
       expect(result).not.toContain('coverage/report.html')
       expect(result).not.toContain('temp.log')
     })
+
+    it('should handle malformed diff headers gracefully', async () => {
+      const diffWithMalformedHeaders = `diff --git a/normal/file.ts b/normal/file.ts
+index 1234567..abcdefg 100644
+--- a/normal/file.ts
++++ b/normal/file.ts
+@@ -1 +1,2 @@
+ normal content
++added line
+diff --git a/file/path missing-b-section
+index 1234567..abcdefg 100644
+--- a/some/file
++++ b/some/file
+@@ -1 +1,2 @@
+ content with malformed header
++another line`
+
+      const mockCompareCommitsWithBasehead =
+        mockOctokit.rest.repos.compareCommitsWithBasehead
+      mockCompareCommitsWithBasehead.mockResolvedValue({
+        data: diffWithMalformedHeaders
+      })
+
+      jest.clearAllMocks()
+
+      const result = await generateDiff(mockOctokit, baseSha, headSha, [
+        '*.fake'
+      ])
+
+      expect(result).toContain('normal/file.ts')
+      expect(core.warning).toHaveBeenCalledTimes(1)
+      expect(core.warning).toHaveBeenCalledWith(
+        'Could not parse diff header: diff --git a/file/path missing-b-section'
+      )
+    })
   })
 
   describe('getCommitMessages', () => {
