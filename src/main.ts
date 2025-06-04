@@ -1,27 +1,61 @@
 import * as core from '@actions/core'
-import { wait } from './wait.js'
+import {
+  validatePullRequestEvent,
+  validatePullRequestAction,
+  extractPRInfo,
+  getApiKeys
+} from './validation.js'
+import {
+  generateDiff,
+  getCommitMessages,
+  updatePRDescription
+} from './github.js'
+import { generatePRDescription } from './claude.js'
+import { PRContext } from './types.js'
 
-/**
- * The main function for the action.
- *
- * @returns Resolves when the action is complete.
- */
+import github from '@actions/github'
+
 export async function run(): Promise<void> {
   try {
-    const ms: string = core.getInput('milliseconds')
+    core.info('Starting PR description automation...')
 
-    // Debug logs are only output if the `ACTIONS_STEP_DEBUG` secret is true
-    core.debug(`Waiting ${ms} milliseconds ...`)
+    validatePullRequestEvent()
+    validatePullRequestAction()
+    const config = getApiKeys()
+    const prInfo = extractPRInfo()
 
-    // Log the current timestamp, wait, then log the new timestamp
-    core.debug(new Date().toTimeString())
-    await wait(parseInt(ms, 10))
-    core.debug(new Date().toTimeString())
+    core.info(`Analyzing PR #${prInfo.number}: ${prInfo.title}`)
+    core.info(`Author: ${prInfo.author}`)
+    core.info(`Base SHA: ${prInfo.baseSha}`)
+    core.info(`Head SHA: ${prInfo.headSha}`)
 
-    // Set outputs for other workflow steps to use
-    core.setOutput('time', new Date().toTimeString())
+    const octokit = github.getOctokit(config.githubToken)
+
+    const [diff, commitMessages] = await Promise.all([
+      generateDiff(octokit, prInfo.baseSha, prInfo.headSha),
+      getCommitMessages(octokit, prInfo.number)
+    ])
+
+    const prContext: PRContext = {
+      prInfo,
+      commitMessages,
+      diff
+    }
+
+    const newDescription = await generatePRDescription(
+      config.anthropicApiKey,
+      prContext
+    )
+
+    await updatePRDescription(octokit, prInfo.number, newDescription)
+
+    core.info(`PR description updated successfully! View at: ${prInfo.url}`)
+    core.setOutput('description', newDescription)
   } catch (error) {
-    // Fail the workflow run if an error occurs
-    if (error instanceof Error) core.setFailed(error.message)
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    core.error(`Error: ${errorMessage}`)
+    core.setFailed(errorMessage)
   }
 }
+
+run()
