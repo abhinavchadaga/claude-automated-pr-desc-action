@@ -1,20 +1,24 @@
 {
-  "name": "typescript-action",
-  "description": "GitHub Actions TypeScript template",
-  "version": "0.0.0",
-  "author": "",
+  "name": "claude-automated-pr-desc-action",
+  "description": "A GitHub Action that uses Claude to generate a PR description",
+  "version": "1.0.0",
+  "author": "Abhinav Chadaga",
   "type": "module",
   "private": true,
-  "homepage": "https://github.com/actions/typescript-action",
+  "homepage": "https://github.com/abhinavchadaga/claude-automated-pr-desc-action",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/actions/typescript-action.git"
+    "url": "git+https://github.com/abhinavchadaga/claude-automated-pr-desc-action.git"
   },
   "bugs": {
-    "url": "https://github.com/actions/typescript-action/issues"
+    "url": "https://github.com/abhinavchadaga/claude-automated-pr-desc-action/issues"
   },
   "keywords": [
-    "actions"
+    "actions",
+    "github",
+    "pr",
+    "description",
+    "claude"
   ],
   "exports": {
     ".": "./dist/index.js"
