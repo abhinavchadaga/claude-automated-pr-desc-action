@@ -9,10 +9,11 @@ function filterDiff(diff: string, ignoredPatterns: string[]): string {
   }
 
   const fileSections = diff
-    .split(/(?=diff --git )/g)
+    .split(/(?=^diff --git )/gm)
     .filter((section) => section.trim())
   const filteredSections: string[] = []
   let removedFilesCount = 0
+  const includedFiles: string[] = []
 
   for (const section of fileSections) {
     const firstLine = section.split('\n')[0]
@@ -34,6 +35,7 @@ function filterDiff(diff: string, ignoredPatterns: string[]): string {
           continue
         }
 
+        includedFiles.push(filePath)
         filteredSections.push(section)
       } else {
         core.warning(`Could not parse diff header: ${firstLine}`)
@@ -46,6 +48,9 @@ function filterDiff(diff: string, ignoredPatterns: string[]): string {
   if (removedFilesCount > 0) {
     core.info(`Filtered out ${removedFilesCount} files from ignored patterns`)
   }
+
+  core.info('Files included in diff:')
+  includedFiles.forEach((file) => core.info(`- ${file}`))
 
   return filteredSections.join('')
 }

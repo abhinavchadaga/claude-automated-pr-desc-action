@@ -33351,10 +33351,11 @@ function filterDiff(diff, ignoredPatterns) {
         return diff;
     }
     const fileSections = diff
-        .split(/(?=diff --git )/g)
+        .split(/(?=^diff --git )/gm)
         .filter((section) => section.trim());
     const filteredSections = [];
     let removedFilesCount = 0;
+    const includedFiles = [];
     for (const section of fileSections) {
         const firstLine = section.split('\n')[0];
         if (firstLine.startsWith('diff --git a/')) {
@@ -33370,6 +33371,7 @@ function filterDiff(diff, ignoredPatterns) {
                     coreExports.info(`Ignoring file: ${filePath}`);
                     continue;
                 }
+                includedFiles.push(filePath);
                 filteredSections.push(section);
             }
             else {
@@ -33383,6 +33385,8 @@ function filterDiff(diff, ignoredPatterns) {
     if (removedFilesCount > 0) {
         coreExports.info(`Filtered out ${removedFilesCount} files from ignored patterns`);
     }
+    coreExports.info('Files included in diff:');
+    includedFiles.forEach((file) => coreExports.info(`- ${file}`));
     return filteredSections.join('');
 }
 async function generateDiff(octokit, baseSha, headSha, ignoredPatterns = []) {
