@@ -35,8 +35,9 @@ function filterDiff(diff: string, ignoredPatterns: string[]): string {
         }
 
         filteredSections.push(section)
+      } else {
+        core.warning(`Could not parse diff header: ${firstLine}`)
       }
-      core.warning(`Could not parse diff header: ${firstLine}`)
     } else {
       filteredSections.push(section)
     }

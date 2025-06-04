@@ -319,6 +319,7 @@ index 1234567..abcdefg 100644
 
       expect(result).toContain('normal/file.ts')
       expect(result).not.toContain('content with malformed header')
+      expect(core.warning).toHaveBeenCalledTimes(1)
       expect(core.warning).toHaveBeenCalledWith(
         'Could not parse diff header: diff --git a/file/path missing-b-section'
       )

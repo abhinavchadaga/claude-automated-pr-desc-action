@@ -33372,7 +33372,9 @@ function filterDiff(diff, ignoredPatterns) {
                 }
                 filteredSections.push(section);
             }
-            coreExports.warning(`Could not parse diff header: ${firstLine}`);
+            else {
+                coreExports.warning(`Could not parse diff header: ${firstLine}`);
+            }
         }
         else {
             filteredSections.push(section);
