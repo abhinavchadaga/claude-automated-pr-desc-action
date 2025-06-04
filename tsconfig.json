@@ -9,8 +9,8 @@
   "exclude": ["__fixtures__", "__tests__", "coverage", "dist", "node_modules"],
   "include": [
     "src",
-    "__test__/claude.test.js",
-    "__test__/github.test.js",
-    "__test__/validation.test.js"
+    "__tests__/claude.test.js",
+    "__tests__/github.test.js",
+    "__tests__/validation.test.js"
   ]
 }

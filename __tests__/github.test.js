@@ -31,7 +31,6 @@ describe('github.js', () => {
     const headSha = 'def456'
 
     it('should generate diff successfully', async () => {
-      // Arrange
       const expectedDiff =
         'diff --git a/file.ts b/file.ts\n+added line\n-removed line'
       const mockCompareCommitsWithBasehead =
@@ -40,10 +39,8 @@ describe('github.js', () => {
         data: expectedDiff
       })
 
-      // Act
       const result = await generateDiff(mockOctokit, baseSha, headSha)
 
-      // Assert
       expect(result).toBe(expectedDiff)
       expect(mockCompareCommitsWithBasehead).toHaveBeenCalledWith({
         owner: 'test-owner',
@@ -60,7 +57,6 @@ describe('github.js', () => {
     })
 
     it('should handle empty diff', async () => {
-      // Arrange
       const emptyDiff = ''
       const mockCompareCommitsWithBasehead =
         mockOctokit.rest.repos.compareCommitsWithBasehead
@@ -68,48 +64,40 @@ describe('github.js', () => {
         data: emptyDiff
       })
 
-      // Act
       const result = await generateDiff(mockOctokit, baseSha, headSha)
 
-      // Assert
       expect(result).toBe(emptyDiff)
       expect(core.info).toHaveBeenCalledWith('Computed Diff: ')
     })
 
     it('should handle API errors', async () => {
-      // Arrange
       const apiError = new Error('API rate limit exceeded')
       const mockCompareCommitsWithBasehead =
         mockOctokit.rest.repos.compareCommitsWithBasehead
       mockCompareCommitsWithBasehead.mockRejectedValue(apiError)
 
-      // Act & Assert
       await expect(generateDiff(mockOctokit, baseSha, headSha)).rejects.toThrow(
         'Failed to generate diff: Error: API rate limit exceeded'
       )
     })
 
     it('should handle network errors', async () => {
-      // Arrange
       const networkError = new Error('Network timeout')
       const mockCompareCommitsWithBasehead =
         mockOctokit.rest.repos.compareCommitsWithBasehead
       mockCompareCommitsWithBasehead.mockRejectedValue(networkError)
 
-      // Act & Assert
       await expect(generateDiff(mockOctokit, baseSha, headSha)).rejects.toThrow(
         'Failed to generate diff: Error: Network timeout'
       )
     })
 
     it('should handle 404 errors for missing commits', async () => {
-      // Arrange
       const notFoundError = new Error('Not Found')
       const mockCompareCommitsWithBasehead =
         mockOctokit.rest.repos.compareCommitsWithBasehead
       mockCompareCommitsWithBasehead.mockRejectedValue(notFoundError)
 
-      // Act & Assert
       await expect(generateDiff(mockOctokit, baseSha, headSha)).rejects.toThrow(
         'Failed to generate diff: Error: Not Found'
       )
@@ -120,7 +108,6 @@ describe('github.js', () => {
     const prNumber = 123
 
     it('should get commit messages successfully', async () => {
-      // Arrange
       const mockCommits = [
         {
           sha: 'abcdef1234567890',
@@ -150,10 +137,8 @@ describe('github.js', () => {
       const expectedMessages =
         'abcdef1 Initial commit\n1234567 Add feature X\nfedcba0 Fix bug in feature Y'
 
-      // Act
       const result = await getCommitMessages(mockOctokit, prNumber)
 
-      // Assert
       expect(result).toBe(expectedMessages)
       expect(mockListCommits).toHaveBeenCalledWith({
         owner: 'test-owner',
@@ -169,7 +154,6 @@ describe('github.js', () => {
     })
 
     it('should handle single commit', async () => {
-      // Arrange
       const mockCommits = [
         {
           sha: 'abcdef1234567890',
@@ -186,29 +170,23 @@ describe('github.js', () => {
 
       const expectedMessages = 'abcdef1 Single commit message'
 
-      // Act
       const result = await getCommitMessages(mockOctokit, prNumber)
 
-      // Assert
       expect(result).toBe(expectedMessages)
     })
 
     it('should handle empty commit list', async () => {
-      // Arrange
       const mockListCommits = mockOctokit.rest.pulls.listCommits
       mockListCommits.mockResolvedValue({
         data: []
       })
 
-      // Act
       const result = await getCommitMessages(mockOctokit, prNumber)
 
-      // Assert
       expect(result).toBe('')
     })
 
     it('should extract only first line of multi-line commit messages', async () => {
-      // Arrange
       const mockCommits = [
         {
           sha: 'abc123',
@@ -223,27 +201,22 @@ describe('github.js', () => {
         data: mockCommits
       })
 
-      // Act
       const result = await getCommitMessages(mockOctokit, prNumber)
 
-      // Assert
       expect(result).toBe('abc123 First line')
     })
 
     it('should handle API errors', async () => {
-      // Arrange
       const apiError = new Error('Forbidden')
       const mockListCommits = mockOctokit.rest.pulls.listCommits
       mockListCommits.mockRejectedValue(apiError)
 
-      // Act & Assert
       await expect(getCommitMessages(mockOctokit, prNumber)).rejects.toThrow(
         'Failed to get commit messages: Error: Forbidden'
       )
     })
 
     it('should handle commits with empty messages', async () => {
-      // Arrange
       const mockCommits = [
         {
           sha: 'abc123',
@@ -264,10 +237,8 @@ describe('github.js', () => {
         data: mockCommits
       })
 
-      // Act
       const result = await getCommitMessages(mockOctokit, prNumber)
 
-      // Assert
       expect(result).toBe('abc123 \ndef456 Valid message')
     })
   })
@@ -277,14 +248,11 @@ describe('github.js', () => {
     const description = '## Summary\nThis PR adds new features.'
 
     it('should update PR description successfully', async () => {
-      // Arrange
       const mockUpdate = mockOctokit.rest.pulls.update
       mockUpdate.mockResolvedValue({})
 
-      // Act
       await updatePRDescription(mockOctokit, prNumber, description)
 
-      // Assert
       expect(mockUpdate).toHaveBeenCalledWith({
         owner: 'test-owner',
         repo: 'test-repo',
@@ -298,15 +266,12 @@ describe('github.js', () => {
     })
 
     it('should handle empty description', async () => {
-      // Arrange
       const emptyDescription = ''
       const mockUpdate = mockOctokit.rest.pulls.update
       mockUpdate.mockResolvedValue({})
 
-      // Act
       await updatePRDescription(mockOctokit, prNumber, emptyDescription)
 
-      // Assert
       expect(mockUpdate).toHaveBeenCalledWith({
         owner: 'test-owner',
         repo: 'test-repo',
@@ -316,15 +281,12 @@ describe('github.js', () => {
     })
 
     it('should handle long descriptions', async () => {
-      // Arrange
       const longDescription = 'A'.repeat(10000)
       const mockUpdate = mockOctokit.rest.pulls.update
       mockUpdate.mockResolvedValue({})
 
-      // Act
       await updatePRDescription(mockOctokit, prNumber, longDescription)
 
-      // Assert
       expect(mockUpdate).toHaveBeenCalledWith(
         expect.objectContaining({
           body: longDescription
@@ -333,24 +295,20 @@ describe('github.js', () => {
     })
 
     it('should handle API errors', async () => {
-      // Arrange
       const apiError = new Error('Unauthorized')
       const mockUpdate = mockOctokit.rest.pulls.update
       mockUpdate.mockRejectedValue(apiError)
 
-      // Act & Assert
       await expect(
         updatePRDescription(mockOctokit, prNumber, description)
       ).rejects.toThrow('Failed to update PR description: Error: Unauthorized')
     })
 
     it('should handle validation errors', async () => {
-      // Arrange
       const validationError = new Error('Invalid PR number')
       const mockUpdate = mockOctokit.rest.pulls.update
       mockUpdate.mockRejectedValue(validationError)
 
-      // Act & Assert
       await expect(
         updatePRDescription(mockOctokit, prNumber, description)
       ).rejects.toThrow(
@@ -359,12 +317,10 @@ describe('github.js', () => {
     })
 
     it('should handle network timeout', async () => {
-      // Arrange
       const timeoutError = new Error('Request timeout')
       const mockUpdate = mockOctokit.rest.pulls.update
       mockUpdate.mockRejectedValue(timeoutError)
 
-      // Act & Assert
       await expect(
         updatePRDescription(mockOctokit, prNumber, description)
       ).rejects.toThrow(
@@ -373,16 +329,13 @@ describe('github.js', () => {
     })
 
     it('should handle special characters in description', async () => {
-      // Arrange
       const specialDescription =
         '## Summary\n\n**Bold text** and *italic*\n\n```typescript\ncode block\n```\n\n- List item\n- Another item'
       const mockUpdate = mockOctokit.rest.pulls.update
       mockUpdate.mockResolvedValue({})
 
-      // Act
       await updatePRDescription(mockOctokit, prNumber, specialDescription)
 
-      // Assert
       expect(mockUpdate).toHaveBeenCalledWith({
         owner: 'test-owner',
         repo: 'test-repo',

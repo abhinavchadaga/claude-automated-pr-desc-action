@@ -20,4 +20,4 @@ export const getOctokit = jest.fn<typeof github.getOctokit>().mockReturnValue({
       update: jest.fn()
     }
   }
-} as any)
+} as unknown as ReturnType<typeof github.getOctokit>)

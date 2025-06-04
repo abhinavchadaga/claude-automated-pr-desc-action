@@ -18,7 +18,6 @@ export async function generateDiff(
       }
     })
 
-    // media type is diff, so response.data is a string
     const diff = response.data as unknown as string
     core.info(`Computed Diff: ${diff}`)
 
