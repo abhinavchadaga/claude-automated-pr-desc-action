@@ -56,6 +56,10 @@ jobs:
       - name: Test Local Action
         id: test-action
         uses: ./
+        with:
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          ignore-patterns: 'dist/**,*.min.js,node_modules/**'
 
       - name: Print Output
         id: output

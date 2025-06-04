@@ -16,6 +16,9 @@ inputs:
       "dist/**,**/*.min.js,node_modules/**")'
     required: false
     default: ''
+outputs:
+  description:
+    description: 'Generated PR description'
 
 runs:
   using: node20
