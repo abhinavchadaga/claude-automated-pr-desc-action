@@ -2,6 +2,10 @@ name: PR Description Generator
 description: Generates a PR description using Claude
 author: abhinavchadaga
 
+branding:
+  icon: '🤖'
+  color: 'blue'
+
 inputs:
   anthropic-api-key:
     description: 'Anthropic API key for Claude'
