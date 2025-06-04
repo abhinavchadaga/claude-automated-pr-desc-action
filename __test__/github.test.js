@@ -12,10 +12,10 @@ import {
   generateDiff,
   getCommitMessages,
   updatePRDescription
-} from './github.js'
+} from '../src/github.js'
 
-describe('github.ts', () => {
-  let mockOctokit: ReturnType<typeof github.getOctokit>
+describe('github.js', () => {
+  let mockOctokit
 
   beforeEach(() => {
     jest.clearAllMocks()
@@ -34,8 +34,8 @@ describe('github.ts', () => {
       // Arrange
       const expectedDiff =
         'diff --git a/file.ts b/file.ts\n+added line\n-removed line'
-      const mockCompareCommitsWithBasehead = mockOctokit.rest.repos
-        .compareCommitsWithBasehead as jest.MockedFunction<any>
+      const mockCompareCommitsWithBasehead =
+        mockOctokit.rest.repos.compareCommitsWithBasehead
       mockCompareCommitsWithBasehead.mockResolvedValue({
         data: expectedDiff
       })
@@ -56,16 +56,14 @@ describe('github.ts', () => {
       expect(core.info).toHaveBeenCalledWith(
         'Generating diff using GitHub API...'
       )
-      expect(core.info).toHaveBeenCalledWith(
-        `Computed Diff: ${expectedDiff}`
-      )
+      expect(core.info).toHaveBeenCalledWith(`Computed Diff: ${expectedDiff}`)
     })
 
     it('should handle empty diff', async () => {
       // Arrange
       const emptyDiff = ''
-      const mockCompareCommitsWithBasehead = mockOctokit.rest.repos
-        .compareCommitsWithBasehead as jest.MockedFunction<any>
+      const mockCompareCommitsWithBasehead =
+        mockOctokit.rest.repos.compareCommitsWithBasehead
       mockCompareCommitsWithBasehead.mockResolvedValue({
         data: emptyDiff
       })
@@ -81,8 +79,8 @@ describe('github.ts', () => {
     it('should handle API errors', async () => {
       // Arrange
       const apiError = new Error('API rate limit exceeded')
-      const mockCompareCommitsWithBasehead = mockOctokit.rest.repos
-        .compareCommitsWithBasehead as jest.MockedFunction<any>
+      const mockCompareCommitsWithBasehead =
+        mockOctokit.rest.repos.compareCommitsWithBasehead
       mockCompareCommitsWithBasehead.mockRejectedValue(apiError)
 
       // Act & Assert
@@ -94,8 +92,8 @@ describe('github.ts', () => {
     it('should handle network errors', async () => {
       // Arrange
       const networkError = new Error('Network timeout')
-      const mockCompareCommitsWithBasehead = mockOctokit.rest.repos
-        .compareCommitsWithBasehead as jest.MockedFunction<any>
+      const mockCompareCommitsWithBasehead =
+        mockOctokit.rest.repos.compareCommitsWithBasehead
       mockCompareCommitsWithBasehead.mockRejectedValue(networkError)
 
       // Act & Assert
@@ -107,8 +105,8 @@ describe('github.ts', () => {
     it('should handle 404 errors for missing commits', async () => {
       // Arrange
       const notFoundError = new Error('Not Found')
-      const mockCompareCommitsWithBasehead = mockOctokit.rest.repos
-        .compareCommitsWithBasehead as jest.MockedFunction<any>
+      const mockCompareCommitsWithBasehead =
+        mockOctokit.rest.repos.compareCommitsWithBasehead
       mockCompareCommitsWithBasehead.mockRejectedValue(notFoundError)
 
       // Act & Assert
@@ -144,8 +142,7 @@ describe('github.ts', () => {
         }
       ]
 
-      const mockListCommits = mockOctokit.rest.pulls
-        .listCommits as jest.MockedFunction<any>
+      const mockListCommits = mockOctokit.rest.pulls.listCommits
       mockListCommits.mockResolvedValue({
         data: mockCommits
       })
@@ -182,8 +179,7 @@ describe('github.ts', () => {
         }
       ]
 
-      const mockListCommits = mockOctokit.rest.pulls
-        .listCommits as jest.MockedFunction<any>
+      const mockListCommits = mockOctokit.rest.pulls.listCommits
       mockListCommits.mockResolvedValue({
         data: mockCommits
       })
@@ -199,8 +195,7 @@ describe('github.ts', () => {
 
     it('should handle empty commit list', async () => {
       // Arrange
-      const mockListCommits = mockOctokit.rest.pulls
-        .listCommits as jest.MockedFunction<any>
+      const mockListCommits = mockOctokit.rest.pulls.listCommits
       mockListCommits.mockResolvedValue({
         data: []
       })
@@ -223,8 +218,7 @@ describe('github.ts', () => {
         }
       ]
 
-      const mockListCommits = mockOctokit.rest.pulls
-        .listCommits as jest.MockedFunction<any>
+      const mockListCommits = mockOctokit.rest.pulls.listCommits
       mockListCommits.mockResolvedValue({
         data: mockCommits
       })
@@ -239,14 +233,13 @@ describe('github.ts', () => {
     it('should handle API errors', async () => {
       // Arrange
       const apiError = new Error('Forbidden')
-      const mockListCommits = mockOctokit.rest.pulls
-        .listCommits as jest.MockedFunction<any>
+      const mockListCommits = mockOctokit.rest.pulls.listCommits
       mockListCommits.mockRejectedValue(apiError)
 
       // Act & Assert
-      await expect(
-        getCommitMessages(mockOctokit, prNumber)
-      ).rejects.toThrow('Failed to get commit messages: Error: Forbidden')
+      await expect(getCommitMessages(mockOctokit, prNumber)).rejects.toThrow(
+        'Failed to get commit messages: Error: Forbidden'
+      )
     })
 
     it('should handle commits with empty messages', async () => {
@@ -266,8 +259,7 @@ describe('github.ts', () => {
         }
       ]
 
-      const mockListCommits = mockOctokit.rest.pulls
-        .listCommits as jest.MockedFunction<any>
+      const mockListCommits = mockOctokit.rest.pulls.listCommits
       mockListCommits.mockResolvedValue({
         data: mockCommits
       })
@@ -286,8 +278,7 @@ describe('github.ts', () => {
 
     it('should update PR description successfully', async () => {
       // Arrange
-      const mockUpdate = mockOctokit.rest.pulls
-        .update as jest.MockedFunction<any>
+      const mockUpdate = mockOctokit.rest.pulls.update
       mockUpdate.mockResolvedValue({})
 
       // Act
@@ -309,8 +300,7 @@ describe('github.ts', () => {
     it('should handle empty description', async () => {
       // Arrange
       const emptyDescription = ''
-      const mockUpdate = mockOctokit.rest.pulls
-        .update as jest.MockedFunction<any>
+      const mockUpdate = mockOctokit.rest.pulls.update
       mockUpdate.mockResolvedValue({})
 
       // Act
@@ -328,8 +318,7 @@ describe('github.ts', () => {
     it('should handle long descriptions', async () => {
       // Arrange
       const longDescription = 'A'.repeat(10000)
-      const mockUpdate = mockOctokit.rest.pulls
-        .update as jest.MockedFunction<any>
+      const mockUpdate = mockOctokit.rest.pulls.update
       mockUpdate.mockResolvedValue({})
 
       // Act
@@ -346,8 +335,7 @@ describe('github.ts', () => {
     it('should handle API errors', async () => {
       // Arrange
       const apiError = new Error('Unauthorized')
-      const mockUpdate = mockOctokit.rest.pulls
-        .update as jest.MockedFunction<any>
+      const mockUpdate = mockOctokit.rest.pulls.update
       mockUpdate.mockRejectedValue(apiError)
 
       // Act & Assert
@@ -359,8 +347,7 @@ describe('github.ts', () => {
     it('should handle validation errors', async () => {
       // Arrange
       const validationError = new Error('Invalid PR number')
-      const mockUpdate = mockOctokit.rest.pulls
-        .update as jest.MockedFunction<any>
+      const mockUpdate = mockOctokit.rest.pulls.update
       mockUpdate.mockRejectedValue(validationError)
 
       // Act & Assert
@@ -374,22 +361,22 @@ describe('github.ts', () => {
     it('should handle network timeout', async () => {
       // Arrange
       const timeoutError = new Error('Request timeout')
-      const mockUpdate = mockOctokit.rest.pulls
-        .update as jest.MockedFunction<any>
+      const mockUpdate = mockOctokit.rest.pulls.update
       mockUpdate.mockRejectedValue(timeoutError)
 
       // Act & Assert
       await expect(
         updatePRDescription(mockOctokit, prNumber, description)
-      ).rejects.toThrow('Failed to update PR description: Error: Request timeout')
+      ).rejects.toThrow(
+        'Failed to update PR description: Error: Request timeout'
+      )
     })
 
     it('should handle special characters in description', async () => {
       // Arrange
       const specialDescription =
         '## Summary\n\n**Bold text** and *italic*\n\n```typescript\ncode block\n```\n\n- List item\n- Another item'
-      const mockUpdate = mockOctokit.rest.pulls
-        .update as jest.MockedFunction<any>
+      const mockUpdate = mockOctokit.rest.pulls.update
       mockUpdate.mockResolvedValue({})
 
       // Act

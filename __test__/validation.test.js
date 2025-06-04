@@ -13,9 +13,9 @@ import {
   validatePullRequestAction,
   extractPRInfo,
   getApiKeys
-} from './validation.js'
+} from '../src/validation.js'
 
-describe('validation.ts', () => {
+describe('validation.js', () => {
   const originalEnv = process.env
 
   beforeEach(() => {
@@ -84,7 +84,7 @@ describe('validation.ts', () => {
 
     it('should throw error for undefined event', () => {
       // Arrange
-      context.eventName = undefined as any
+      context.eventName = undefined
 
       // Act & Assert
       expect(() => validatePullRequestEvent()).toThrow(
@@ -419,9 +419,7 @@ describe('validation.ts', () => {
   describe('getApiKeys', () => {
     it('should get API keys from inputs', () => {
       // Arrange
-      ;(
-        core.getInput as jest.MockedFunction<typeof core.getInput>
-      ).mockImplementation((name: string) => {
+      core.getInput.mockImplementation((name) => {
         if (name === 'anthropic-api-key') return 'test-anthropic-key'
         if (name === 'github-token') return 'test-github-token'
         return ''
@@ -441,9 +439,7 @@ describe('validation.ts', () => {
       // Arrange
       process.env.ANTHROPIC_API_KEY = 'env-anthropic-key'
       process.env.GITHUB_TOKEN = 'env-github-token'
-      ;(
-        core.getInput as jest.MockedFunction<typeof core.getInput>
-      ).mockReturnValue('')
+      core.getInput.mockReturnValue('')
 
       // Act
       const result = getApiKeys()
@@ -459,9 +455,7 @@ describe('validation.ts', () => {
       // Arrange
       process.env.ANTHROPIC_API_KEY = 'env-anthropic-key'
       process.env.GITHUB_TOKEN = 'env-github-token'
-      ;(
-        core.getInput as jest.MockedFunction<typeof core.getInput>
-      ).mockImplementation((name: string) => {
+      core.getInput.mockImplementation((name) => {
         if (name === 'anthropic-api-key') return 'input-anthropic-key'
         if (name === 'github-token') return 'input-github-token'
         return ''
@@ -480,9 +474,7 @@ describe('validation.ts', () => {
     it('should mix input and environment variables', () => {
       // Arrange
       process.env.ANTHROPIC_API_KEY = 'env-anthropic-key'
-      ;(
-        core.getInput as jest.MockedFunction<typeof core.getInput>
-      ).mockImplementation((name: string) => {
+      core.getInput.mockImplementation((name) => {
         if (name === 'github-token') return 'input-github-token'
         return ''
       })
@@ -499,9 +491,7 @@ describe('validation.ts', () => {
 
     it('should throw error when Anthropic API key is missing', () => {
       // Arrange
-      ;(
-        core.getInput as jest.MockedFunction<typeof core.getInput>
-      ).mockImplementation((name: string) => {
+      core.getInput.mockImplementation((name) => {
         if (name === 'github-token') return 'test-github-token'
         return ''
       })
@@ -514,9 +504,7 @@ describe('validation.ts', () => {
 
     it('should throw error when GitHub token is missing', () => {
       // Arrange
-      ;(
-        core.getInput as jest.MockedFunction<typeof core.getInput>
-      ).mockImplementation((name: string) => {
+      core.getInput.mockImplementation((name) => {
         if (name === 'anthropic-api-key') return 'test-anthropic-key'
         return ''
       })
@@ -529,9 +517,7 @@ describe('validation.ts', () => {
 
     it('should throw error when both API keys are missing', () => {
       // Arrange
-      ;(
-        core.getInput as jest.MockedFunction<typeof core.getInput>
-      ).mockReturnValue('')
+      core.getInput.mockReturnValue('')
 
       // Act & Assert
       expect(() => getApiKeys()).toThrow(
@@ -543,9 +529,7 @@ describe('validation.ts', () => {
       // Arrange
       process.env.ANTHROPIC_API_KEY = 'env-anthropic-key'
       process.env.GITHUB_TOKEN = 'env-github-token'
-      ;(
-        core.getInput as jest.MockedFunction<typeof core.getInput>
-      ).mockReturnValue('')
+      core.getInput.mockReturnValue('')
 
       // Act
       const result = getApiKeys()
@@ -561,9 +545,7 @@ describe('validation.ts', () => {
       // Arrange
       process.env.ANTHROPIC_API_KEY = 'env-anthropic-key'
       process.env.GITHUB_TOKEN = 'env-github-token'
-      ;(
-        core.getInput as jest.MockedFunction<typeof core.getInput>
-      ).mockReturnValue('   ')
+      core.getInput.mockReturnValue('   ')
 
       // Act
       const result = getApiKeys()

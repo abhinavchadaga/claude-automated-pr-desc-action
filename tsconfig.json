@@ -7,5 +7,10 @@
     "outDir": "./dist"
   },
   "exclude": ["__fixtures__", "__tests__", "coverage", "dist", "node_modules"],
-  "include": ["src"]
+  "include": [
+    "src",
+    "__test__/claude.test.js",
+    "__test__/github.test.js",
+    "__test__/validation.test.js"
+  ]
 }
